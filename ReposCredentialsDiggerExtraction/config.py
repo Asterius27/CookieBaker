@@ -1,0 +1,12 @@
+import time
+
+RUN_TIME_STR = time.strftime('%Y-%m-%d_%H-%M-%S')
+
+DEFAULT_DIR_FOR_REPOS = "repos"
+DEFAULT_DIR_FOR_LOGS = "logs"
+DEFAULT_DIR_FOR_OUTPUTS = "outputs"
+DEFAULT_FILENAME_FOR_OUTPUT = "OUTPUT"
+DEFAULT_FILENAME_FOR_ERROR = "ERROR"
+DEFAULT_FILENAME_FOR_STATS = "STATS"
+
+SUDO = "your sudo password"

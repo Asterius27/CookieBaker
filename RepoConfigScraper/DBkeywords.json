@@ -1,0 +1,14 @@
+[
+  "redis",
+  "mysql",
+  "postgres",
+  "mongo",
+  "mariadb",
+  "cassandra",
+  "neo4j",
+  "percona",
+  "aerospike",
+  "db",
+  "database",
+  "dbms"
+]

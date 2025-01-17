@@ -1,0 +1,13 @@
+import python
+import codeql_library.FlaskLogin
+
+from API::Node url_rule, string str, API::CallNode cn
+where url_rule = cn.getReturn().getMember("add_url_rule")
+    and (str = url_rule.getParameter(0).getAValueReachingSink().asExpr().(StringLiteral).getText()
+        or str = url_rule.getKeywordParameter("rule").getAValueReachingSink().asExpr().(StringLiteral).getText())
+    and not exists(Class cls |
+        cls = FlaskLogin::getClassViews()
+        and (url_rule.getKeywordParameter("view_func").getAValueReachingSink().asExpr().(Call).getFunc().(Attribute).getObject().(Name).getId() = cls.getName()
+            or url_rule.getParameter(2).getAValueReachingSink().asExpr().(Call).getFunc().(Attribute).getObject().(Name).getId() = cls.getName()))
+    and cn = API::moduleImport("flask").getMember("Blueprint").getACall()
+select FlaskLogin::calculateURLPrefix(cn) + str
