@@ -20,6 +20,24 @@ from models.RepositoryInfo import RepositoryInfo
 from util.askToGemini import extractCredentialFromFile
 from util.fileUtil import createDirectoryIfNotExists
 
+keywords = [
+    "readme",
+    "docker",
+    "setting",
+    "config",
+    "environment",
+    "makefile",
+    "setup",
+    "changelog",
+    "todo",
+    "properties",
+    "profile",
+    "secrets",
+    "credentials",
+    "about",
+    "notice"
+]
+
 parser = argparse.ArgumentParser()
 # and add arguments to the parser
 parser.add_argument("-i", "--input", dest="inputFilename", help="Input File", required=True)
@@ -52,11 +70,16 @@ for repoInfo in entryList:
     mdFiles = repoInfo.getMarkdownFilePaths()
     rstFiles = repoInfo.getRstFilePaths()
 
-    # keep just the paths with "readme" in the filename
-    filteredMdFiles = [path for path in mdFiles if "readme" in os.path.basename(path).lower()]
-    filteredRstFiles = [path for path in rstFiles if "readme" in os.path.basename(path).lower()]
+    jsonFiles = repoInfo.getJsonFilePaths()
+    ymlFiles = repoInfo.getYmlFilePaths()
+    iniFiles = repoInfo.getIniFilePaths()
 
-    filesToTest = filteredMdFiles + filteredRstFiles + envFiles
+    filesToTest = envFiles + mdFiles + rstFiles + jsonFiles + ymlFiles + iniFiles
+    filesToTest = [
+       path for path in filesToTest
+       if any(keyword in os.path.basename(path).lower() for keyword in keywords)
+    ]
+
     print(f"Files to be tested: {len(filesToTest)}")
     credentials = []
     for file in filesToTest:

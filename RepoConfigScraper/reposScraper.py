@@ -39,6 +39,13 @@ counterWithRequirements = 0
 counterWithScripts = 0
 counterWithSql = 0
 counterWithEnv = 0
+
+counterWithMd = 0
+counterWithYml = 0
+counterWithIni = 0
+counterWithJson = 0
+counterWithRst = 0
+
 counterWithEnvAndDockerCompose = 0
 
 counterWithDockerCompose = 0
@@ -65,11 +72,52 @@ counterWithDockerfileWithEnvWithoutDockerCompose = 0
 counterTotalNumberDockerCompose = 0
 counterTotalNumberDockerfile = 0
 
+counterFilesToTest = 0
+counterFilteredMdFiles = 0
+counterFilteredRstFiles = 0
+counterEnvFiles = 0
+
+countersPerRepo = dict()
+countersPerRepoFiltered = dict()
+keywords = [
+    "readme",
+    "docker",
+    "setting",
+    "config",
+    "environment",
+    "makefile",
+    "setup",
+    "changelog",
+    "todo",
+    "properties",
+    "profile",
+    "secrets",
+    "credentials",
+    "about",
+    "notice"
+]
+
+keywords_without_readme = [
+    "docker",
+    "setting",
+    "config",
+    "environment",
+    "makefile",
+    "setup",
+    "changelog",
+    "todo",
+    "properties",
+    "profile",
+    "secrets",
+    "credentials",
+    "about",
+    "notice"
+]
+
 lock = threading.Lock()
 
 TOKEN_SEPARATOR = "/"  # linux
 # TOKEN_SEPARATOR = "\\"  # windows
-
 
 # create a parser
 parser = argparse.ArgumentParser()
@@ -206,7 +254,11 @@ def processRepository(repoName, repoPath):
         markdownFilePaths = filesByExtension.get(".md", [])
         rstTextFilePaths = filesByExtension.get(".rst", [])
         ymlFilePaths = filesByExtension.get(".yml", [])
+        yamlFilePaths = filesByExtension.get(".yaml", [])
+        ymlFilePaths = ymlFilePaths + yamlFilePaths
         sqlFilePaths = filesByExtension.get(".sql", [])
+        jsonFilePaths = filesByExtension.get(".json", [])
+        iniFilePaths = filesByExtension.get(".ini", [])
 
         envFilePaths = []
 
@@ -235,10 +287,14 @@ def processRepository(repoName, repoPath):
                                   dockerfilePath,
                                   scriptFilePaths, markdownFilePaths, ymlFilePaths, sqlFilePaths, envFilePaths,
                                   rstTextFilePaths,
+
+                                  iniFilePaths, jsonFilePaths,
+
                                   multipleDockerComposePaths,
                                   dbInfoInDockerCompose,
                                   multipleDockerfilePaths,
                                   dbInfoInDockerfile)
+
 
     except Exception as e:
         print("Error while analyzing repo")
@@ -276,6 +332,7 @@ with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
 
     for future in as_completed(futures):
         isThereError, repoInfo = future.result()
+        counterFilesInRepo = 0
 
         if not isThereError and repoInfo:  # save info
             repoInfoList.append(repoInfo)
@@ -287,8 +344,83 @@ with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 counterWithScripts += 1
             if len(repoInfo.getSqlFilePaths()) > 0:
                 counterWithSql += 1
+
+            counterFilesYaml = 0
+            counterFilesEnv = 0
+            counterFilesMd = 0
+            counterFilesJson = 0
+            counterFilesRst = 0
+            counterFilesIni = 0
+
+            filteredCounterFilesYaml = 0
+            filteredCounterFilesEnv = 0
+            filteredCounterFilesMd = 0
+            filteredCounterFilesJson = 0
+            filteredCounterFilesRst = 0
+            filteredCounterFilesIni = 0
+
+            # ENV
             if len(repoInfo.getEnvFilePaths()) > 0:
                 counterWithEnv += 1
+                counterFilesEnv += len(repoInfo.getEnvFilePaths())
+                filteredCounterFilesEnv += len([
+                    path for path in repoInfo.getEnvFilePaths()
+                    if any(keyword in os.path.basename(path).lower() for keyword in keywords)
+                ])
+
+            # MARKDOWN
+            if len(repoInfo.getMarkdownFilePaths()) > 0:
+                counterWithMd += 1
+                counterFilesMd += len(repoInfo.getMarkdownFilePaths())
+                filteredCounterFilesMd += len([
+                    path for path in repoInfo.getMarkdownFilePaths()
+                    if any(keyword in os.path.basename(path).lower() for keyword in keywords_without_readme)
+                ])
+
+            # YML/YAML
+            if len(repoInfo.getYmlFilePaths()) > 0:
+                counterWithYml += 1
+                counterFilesYaml += len(repoInfo.getYmlFilePaths())
+                filteredCounterFilesYaml += len([
+                    path for path in repoInfo.getYmlFilePaths()
+                    if any(keyword in os.path.basename(path).lower() for keyword in keywords)
+                ])
+
+            # INI
+            if len(repoInfo.getIniFilePaths()) > 0:
+                counterWithIni += 1
+                counterFilesIni += len(repoInfo.getIniFilePaths())
+                filteredCounterFilesIni += len([
+                    path for path in repoInfo.getIniFilePaths()
+                    if any(keyword in os.path.basename(path).lower() for keyword in keywords)
+                ])
+
+            # JSON
+            if len(repoInfo.getJsonFilePaths()) > 0:
+                counterWithJson += 1
+                counterFilesJson += len(repoInfo.getJsonFilePaths())
+                filteredCounterFilesJson += len([
+                    path for path in repoInfo.getJsonFilePaths()
+                    if any(keyword in os.path.basename(path).lower() for keyword in keywords)
+                ])
+
+            # RST
+            if len(repoInfo.getRstFilePaths()) > 0:
+                counterWithRst += 1
+                counterFilesRst += len(repoInfo.getRstFilePaths())
+                filteredCounterFilesRst += len([
+                    path for path in repoInfo.getRstFilePaths()
+                    if any(keyword in os.path.basename(path).lower() for keyword in keywords_without_readme)
+                ])
+
+            # counterFilesInRepo = counterFilesYaml + counterFilesEnv + counterFilesMd + counterFilesJson + counterFilesRst + counterFilesIni
+
+            countersPerRepo[repoInfo.getRepoName()] = (counterFilesYaml, counterFilesEnv, counterFilesMd,
+                                                       counterFilesJson, counterFilesRst, counterFilesIni)
+            countersPerRepoFiltered[repoInfo.getRepoName()] = (filteredCounterFilesYaml, filteredCounterFilesEnv,
+                                                       filteredCounterFilesMd,
+                                                       filteredCounterFilesJson, filteredCounterFilesRst,
+                                                       filteredCounterFilesIni)
 
             if repoInfo.getDockerComposePath() != "":
                 counterWithDockerCompose += 1
@@ -341,6 +473,22 @@ with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             counterTotalNumberDockerCompose += len(repoInfo.getMultipleDockerComposePaths())
             counterTotalNumberDockerfile += len(repoInfo.getMultipleDockerfilePaths())
 
+
+            
+            envFiles = repoInfo.getEnvFilePaths()
+            mdFiles = repoInfo.getMarkdownFilePaths()
+            rstFiles = repoInfo.getRstFilePaths()
+            # keep just the paths with "readme" in the filename
+            filteredMdFiles = [path for path in mdFiles if "readme" in os.path.basename(path).lower()]
+            filteredRstFiles = [path for path in rstFiles if "readme" in os.path.basename(path).lower()]
+            filesToTest = filteredMdFiles + filteredRstFiles + envFiles
+
+            counterFilesToTest += len(filesToTest)
+            counterFilteredMdFiles += len(filteredMdFiles)
+            counterFilteredRstFiles += len(filteredRstFiles)
+            counterEnvFiles += len(envFiles)
+
+
         elif isThereError:
             errorRepos.append(f"{repoInfo.getRepoName()},{repoInfo.getRepoURL()}")
         else:
@@ -366,7 +514,7 @@ with open(os.path.join(DEFAULT_DIR_FOR_OUTPUTS,
     f.write(f"Number of repos with requirements.txt: {counterWithRequirements}\n")
     f.write(f"\n")
     f.write(f"Number of repos with docker-compose: {counterWithDockerCompose}\n")
-    f.write(f"Number of repos with dockerfile: {counterWithDockerCompose}\n")
+    f.write(f"Number of repos with dockerfile: {counterWithDockerfile}\n")
     f.write(f"Number of repos with docker-compose, without dockerfile: {counterWithDockerComposeWithoutDockerfile}\n")
     f.write(f"Number of repos without docker-compose, with dockerfile: {counterWithDockerfileWithoutDockerCompose}\n")
     f.write(f"Number of repos with both docker-compose and dockerfile: {counterWithDockerfileWithDockerCompose}\n")
@@ -391,6 +539,13 @@ with open(os.path.join(DEFAULT_DIR_FOR_OUTPUTS,
     f.write(f"Number of repos with scripts: {counterWithScripts}\n")
     f.write(f"Number of repos with .sql files: {counterWithSql}\n")
     f.write(f"Number of repos with .env files: {counterWithEnv}\n")
+
+    f.write(f"Number of repos with .md files: {counterWithMd}\n")
+    f.write(f"Number of repos with YAML files: {counterWithYml}\n")
+    f.write(f"Number of repos with .ini files: {counterWithIni}\n")
+    f.write(f"Number of repos with .json files: {counterWithJson}\n")
+    f.write(f"Number of repos with .rst files: {counterWithRst}\n")
+
     f.write(f"\n")
     f.write(f"Number of repos with multiple dockerfile: {counterWithMultipleDockerfilePaths}\n")
     f.write(
@@ -398,6 +553,14 @@ with open(os.path.join(DEFAULT_DIR_FOR_OUTPUTS,
     f.write(f"\n")
     f.write(f"Total number of docker compose among all repos: {counterTotalNumberDockerCompose}\n")
     f.write(f"Total number of dockerfile among all repos: {counterTotalNumberDockerfile}\n")
+
+    f.write(f"\n")
+    f.write(f"\n")
+    f.write(f"DEBUG")
+    f.write(f"Total file with 'readme' in path or filename: {counterFilesToTest}\n")
+    f.write(f"Filtered MD with 'readme': {counterFilteredMdFiles}\n")
+    f.write(f"Filtered RST with 'readme': {counterFilteredRstFiles}\n")
+    f.write(f"ENV files: {counterEnvFiles}\n")
     f.flush()
 
 # save repos with errors to file
@@ -410,3 +573,81 @@ for item in errorRepos:
     f.flush()
 
 print(f"End.")
+
+# Sort the dictionary items by the total number of files (sum of the tuple)
+sortedRepos = sorted(
+    countersPerRepo.items(),
+    key=lambda item: sum(item[1]),
+    reverse=True  # optional: highest totals first
+)
+
+filteredSortedRepos = sorted(
+    countersPerRepoFiltered.items(),
+    key=lambda item: sum(item[1]),
+    reverse=True  # optional: highest totals first
+)
+
+# save stats to file
+with open(os.path.join(DEFAULT_DIR_FOR_OUTPUTS,
+                       RUN_TIME_STR,
+                       f"{RUN_TIME_STR}_{DEFAULT_FILENAME_FOR_STATS}_fileclassification.txt"),
+          "w") as f:
+    totalNumberOfFile = 0
+    sumYaml = sumEnv = sumMd = sumJson = sumRst = sumIni = 0
+
+    # Write table header
+    f.write(f"{'Repo':<50} {'TOTAL':>7} {'YAML':>10} {'ENV':>10} {'MD':>10} {'JSON':>10} {'RST':>10} {'INI':>10}\n")
+
+    # Write per-repo file counts
+    for repoName, (counterFilesYaml, counterFilesEnv, counterFilesMd, counterFilesJson, counterFilesRst,
+                   counterFilesIni) in sortedRepos:
+        total = sum(
+            (counterFilesYaml, counterFilesEnv, counterFilesMd, counterFilesJson, counterFilesRst, counterFilesIni))
+
+        totalNumberOfFile += total
+        sumYaml += counterFilesYaml
+        sumEnv += counterFilesEnv
+        sumMd += counterFilesMd
+        sumJson += counterFilesJson
+        sumRst += counterFilesRst
+        sumIni += counterFilesIni
+
+        f.write(
+            f"{repoName:<50} {total:>10} {counterFilesYaml:>10} {counterFilesEnv:>10} {counterFilesMd:>10} {counterFilesJson:>10} {counterFilesRst:>10} {counterFilesIni:>10}\n")
+
+    # Write total
+    f.write("-" * 140 + "\n")
+    f.write(f"{'Repo':<50} {'TOTAL':>7} {'YAML':>10} {'ENV':>10} {'MD':>10} {'JSON':>10} {'RST':>10} {'INI':>10}\n")
+    f.write(
+        f"{'TOTAL per type':<50} {totalNumberOfFile:>10} {sumYaml:>10} {sumEnv:>10} {sumMd:>10} {sumJson:>10} {sumRst:>10} {sumIni:>10}\n")
+
+    # NOW FILTERED
+    f.write(f"\n\n\n\nFILTERED with keywords {keywords}\n\n")
+
+    totalNumberOfFile = 0
+    sumYaml = sumEnv = sumMd = sumJson = sumRst = sumIni = 0
+
+    f.write(f"{'Repo':<50} {'TOTAL':>7} {'YAML':>10} {'ENV':>10} {'MD':>10} {'JSON':>10} {'RST':>10} {'INI':>10}\n")
+
+    # Write per-repo file counts
+    for repoName, (counterFilesYaml, counterFilesEnv, counterFilesMd, counterFilesJson, counterFilesRst,
+                   counterFilesIni) in filteredSortedRepos:
+        total = sum(
+            (counterFilesYaml, counterFilesEnv, counterFilesMd, counterFilesJson, counterFilesRst, counterFilesIni))
+
+        totalNumberOfFile += total
+        sumYaml += counterFilesYaml
+        sumEnv += counterFilesEnv
+        sumMd += counterFilesMd
+        sumJson += counterFilesJson
+        sumRst += counterFilesRst
+        sumIni += counterFilesIni
+
+        f.write(
+            f"{repoName:<50} {total:>10} {counterFilesYaml:>10} {counterFilesEnv:>10} {counterFilesMd:>10} {counterFilesJson:>10} {counterFilesRst:>10} {counterFilesIni:>10}\n")
+
+    # Write total
+    f.write("-" * 140 + "\n")
+    f.write(f"{'Repo':<50} {'TOTAL':>7} {'YAML':>10} {'ENV':>10} {'MD':>10} {'JSON':>10} {'RST':>10} {'INI':>10}\n")
+    f.write(
+        f"{'TOTAL per type':<50} {totalNumberOfFile:>10} {sumYaml:>10} {sumEnv:>10} {sumMd:>10} {sumJson:>10} {sumRst:>10} {sumIni:>10}\n")

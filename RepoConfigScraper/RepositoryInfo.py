@@ -3,7 +3,7 @@ class RepositoryInfo(dict):
                  readmePath: str = "", requirementsPath: str = "", dockerComposePath: str = "",
                  dockerfilePath: str = "",
                  scriptFilePaths=[], markdownFilePaths=[],
-                 ymlFilePaths=[], sqlFilePaths=[], envFilePaths=[], rstTextFilePaths=[], multipleDockerComposePaths=[],
+                 ymlFilePaths=[], sqlFilePaths=[], envFilePaths=[], rstTextFilePaths=[], iniFilePaths=[], jsonFilePaths=[], multipleDockerComposePaths=[],
                  dbInfoInDockerCompose=False, multipleDockerfilePaths=[], dbInfoInDockerfile=False, ):
         dict.__init__(self,
                       repoName=repoName,
@@ -19,6 +19,8 @@ class RepositoryInfo(dict):
                       sqlFilePaths=sqlFilePaths,
                       envFilePaths=envFilePaths,
                       rstTextFilePaths=rstTextFilePaths,
+                      iniFilePaths = iniFilePaths,
+                      jsonFilePaths = jsonFilePaths,
                       multipleDockerComposePaths=multipleDockerComposePaths,
                       dbInfoInDockerCompose=dbInfoInDockerCompose,
                       multipleDockerfilePaths=multipleDockerfilePaths,
@@ -64,6 +66,12 @@ class RepositoryInfo(dict):
     def getEnvFilePaths(self):
         return self.get('envFilePaths', [])
 
+    def getIniFilePaths(self):
+        return self.get('iniFilePaths', [])
+    
+    def getJsonFilePaths(self):
+        return self.get('jsonFilePaths', [])
+
     def getMultipleDockerComposePaths(self):
         return self.get('multipleDockerComposePaths', [])
 
@@ -75,3 +83,5 @@ class RepositoryInfo(dict):
 
     def getDbInfoInDockerfile(self):
         return self.get('dbInfoInDockerfile', [])
+
+

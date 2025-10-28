@@ -1,11 +1,14 @@
 import subprocess
 import time
 
+
 def execute_cmd(cmd):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
     for line in process.stdout:
         print(line, end='')
-    print(process.stderr)
+
+    for line in process.stderr:
+        print(line, end='')
 
 
 def handler(signum, frame):
@@ -30,7 +33,9 @@ def turnOnCredentialsDigger():
 def scanRepoCredentialsDigger(repoPath, outputName):
     # run scan of local repo
 
-    scan_repo_cmd = 'docker exec -it credential_digger_sqlite sh -c "credentialdigger scan_path ' + repoPath + ' --sqlite /credential-digger-ui/data.db"'
+    # scan_repo_cmd = 'docker exec -it credential_digger_sqlite sh -c "credentialdigger scan_path ' + repoPath + ' --sqlite /credential-digger-ui/data.db"'
+    scan_repo_cmd = 'docker exec -it credential_digger_sqlite sh -c "credentialdigger scan_path ' + repoPath + ' --sqlite /credential-digger-ui/data.db --similarity --models PathModel PasswordModel"'
+
     results_cmd = 'docker exec -it credential_digger_sqlite sh -c "credentialdigger get_discoveries ' + repoPath + ' --sqlite /credential-digger-ui/data.db --save ./vol/results/' + \
                   outputName + '.csv --state new --with_rules"'
     execute_cmd(scan_repo_cmd)
