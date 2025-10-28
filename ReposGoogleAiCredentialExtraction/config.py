@@ -22,15 +22,14 @@ GOOGLE_AI_GENERATION_CONFIG = {
     "response_mime_type": "application/json",
 }
 
-BASE_PROMPT = """Consider my question carefully and think of the academic or professional expertise of someone that could best answer my question. You have the experience of someone with expert knowledge in that area. Be helpful and answer in detail while preferring to use information from reputable sources.
+BASE_PROMPT = """You are an expert web application developer helping us locate credentials in documentation and configuration files that can be used to authenticate into the web application at hand. Be helpful and answer in detail while preferring to use information from reputable sources.
 
-I give you a readme text file that may contain one or more usernames and passwords, or emails and passwords.
-Credentials can be hidden in different places in this text: be smart! 
-Consider also various snippets of code that can be delimited by ``` symbol.
+I will provide a text file that may contain one or more usernames and passwords, or emails and passwords.
+Credentials can be hidden anywhere in the text: be smart! 
+In particular, pay attention to code snippets that are delimited by the ``` symbol.
+Please provide a list of all the credentials you find in there. 
 
-
-Please, provide me a list of all them that you find there. 
 Output JSON with this format {"credentials": [ {"username":"...", "password":"..."} ]}. 
-If there are not credentials, just return {"credentials": []}."
-"""
 
+If there are no credentials, just return {"credentials": []}.
+"""
